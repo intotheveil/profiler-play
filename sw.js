@@ -21,6 +21,18 @@ async function dropOtherBuilds(keep) {
   }
 }
 
+// the page's list of its build files (pwa.js): fetch and keep each one that exists, so the first visit works offline
+self.addEventListener("message", (e) => {
+  const list = (e.data && e.data.precache) || [];
+  e.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    for (const u of list) {
+      if (await cache.match(u, { ignoreSearch: true })) continue;
+      try { const res = await fetch(u); if (res.ok) await cache.put(u, res); } catch (err) {}
+    }
+  })());
+});
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);

@@ -9,6 +9,13 @@ const PLAY_URL = "";
   const root = new URL("./", document.currentScript.src);   // pwa.js sits at the site root
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register(new URL("sw.js", root), { scope: root.pathname }).catch(() => {});
+    // the first visit loads the game before the worker runs: hand it this build's files so the app works offline at once
+    const m = location.pathname.match(/\/b\/([0-9a-f]+)\//);
+    if (m) navigator.serviceWorker.ready.then((reg) => {
+      const here = new URL("./", location.href);
+      const files = ["js", "wasm", "pck", "audio.worklet.js", "audio.position.worklet.js"].map((x) => new URL(`index.${m[1]}.${x}`, here).href);
+      reg.active.postMessage({ precache: [new URL("index.html", here).href, root.href, ...files] });
+    });
   }
   const android = /Android/i.test(navigator.userAgent);
   const installed = matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches;
